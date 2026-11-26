@@ -17,6 +17,14 @@ O exemplo devolve seis referências e exercita todas as classificações. Copie 
 python -m conciliacao --db exemplo.db report BATCH_ID
 ~~~
 
+Para revisar somente as divergências em uma planilha, exporte o lote salvo em CSV.
+
+~~~text
+python -m conciliacao --db exemplo.db report BATCH_ID --format csv
+~~~
+
+O CSV usa ponto e vírgula, informa as contagens por origem e mantém os valores em centavos. Quando há mais de um registro na mesma origem, o valor correspondente fica em branco para evitar uma escolha arbitrária.
+
 ## Formato
 
 ~~~csv

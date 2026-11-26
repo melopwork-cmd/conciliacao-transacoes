@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
+import csv
 import json
 from pathlib import Path
 import sqlite3
@@ -52,6 +53,23 @@ class ReconciliationTests(unittest.TestCase):
             self.assertEqual(read_report(db, report["batch_id"]), report)
             with closing(sqlite3.connect(db)) as connection:
                 self.assertEqual(connection.execute("SELECT count(*) FROM batches").fetchone()[0], 1)
+
+    def test_csv_export_reports_discrepancies_and_keeps_ambiguous_amounts_blank(self):
+        report = reconcile(LEDGER, SETTLEMENTS)
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "discrepancies.db"
+            save_report(db, report)
+            output = subprocess.check_output([
+                sys.executable, "-m", "conciliacao", "--db", str(db),
+                "report", report["batch_id"], "--format", "csv",
+            ], cwd=ROOT, text=True)
+            rows = {row["referencia"]: row for row in csv.DictReader(output.splitlines(), delimiter=";")}
+            self.assertNotIn("PED-1001", rows)
+            self.assertEqual(len(rows), 5)
+            self.assertEqual(rows["PED-1002"]["centavos_ledger"], "3500")
+            self.assertEqual(rows["PED-1002"]["centavos_liquidacao"], "3000")
+            self.assertEqual(rows["PED-1005"]["registros_liquidacao"], "2")
+            self.assertEqual(rows["PED-1005"]["centavos_liquidacao"], "")
 
     def test_cli_round_trip(self):
         with TemporaryDirectory() as tmp:
