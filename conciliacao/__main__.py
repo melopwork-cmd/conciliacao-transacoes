@@ -27,9 +27,12 @@ def main() -> int:
                             help="CSV lists discrepancies, summary provides counts only")
     batches_cmd = commands.add_parser("batches", help="list recently saved batches")
     batches_cmd.add_argument("--limit", type=int, default=20)
+    batches_cmd.add_argument("--offset", type=int, default=0)
     args = parser.parse_args()
     if args.action == "batches" and not 1 <= args.limit <= 100:
         parser.error("--limit must be between 1 and 100")
+    if args.action == "batches" and not 0 <= args.offset <= 2**63 - 1:
+        parser.error("--offset must be a nonnegative SQLite integer")
     try:
         if args.action == "validate":
             ledger = read_csv(args.ledger.read_bytes(), "ledger")
@@ -37,7 +40,7 @@ def main() -> int:
             print(json.dumps({"ledger_rows": len(ledger), "settlement_rows": len(settlements)}, indent=2))
             return 0
         if args.action == "batches":
-            print(json.dumps(list_batches(args.db, args.limit), indent=2))
+            print(json.dumps(list_batches(args.db, args.limit, args.offset), indent=2))
             return 0
         if args.action == "reconcile":
             result = reconcile(args.ledger.read_bytes(), args.settlements.read_bytes())

@@ -27,7 +27,7 @@ def read_report(database: Path, key: str) -> dict | None:
         row = db.execute("SELECT report FROM batches WHERE id = ?", (key,)).fetchone()
     return json.loads(row[0]) if row else None
 
-def list_batches(database: Path, limit: int) -> list[dict[str, str]]:
+def list_batches(database: Path, limit: int, offset: int = 0) -> list[dict[str, str]]:
     if not database.is_file():
         return []
     file_uri = database.resolve().as_uri() + "?mode=ro"
@@ -35,5 +35,6 @@ def list_batches(database: Path, limit: int) -> list[dict[str, str]]:
         table = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='batches'").fetchone()
         if not table:
             return []
-        rows = db.execute("SELECT id, created_at FROM batches ORDER BY rowid DESC LIMIT ?", (limit,))
+        rows = db.execute("SELECT id, created_at FROM batches ORDER BY rowid DESC LIMIT ? OFFSET ?",
+                          (limit, offset))
         return [{"batch_id": batch_id, "created_at": created_at} for batch_id, created_at in rows]
