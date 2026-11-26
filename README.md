@@ -41,3 +41,7 @@ O identificador do lote é derivado do conteúdo dos dois arquivos em ordem. O S
 A local Python reconciliation CLI with exact currency amounts, row-level discrepancy reporting, and idempotent SQLite storage. The example files are synthetic. Independent portfolio project built with AI assistance.
 
 - [Python sqlite3](https://docs.python.org/3/library/sqlite3.html)
+
+### Verificação em automações
+
+Use `reconcile --fail-on-discrepancies` para retornar código 1 quando houver divergências. O relatório continua disponível no SQLite e na saída padrão.

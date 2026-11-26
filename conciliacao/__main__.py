@@ -15,6 +15,8 @@ def main() -> int:
     run = commands.add_parser("reconcile", help="compare two CSV files")
     run.add_argument("ledger", type=Path)
     run.add_argument("settlements", type=Path)
+    run.add_argument("--fail-on-discrepancies", action="store_true",
+                     help="exit with status 1 if the report contains discrepancies")
     report_cmd = commands.add_parser("report", help="read a previously saved result")
     report_cmd.add_argument("batch_id")
     report_cmd.add_argument("--format", choices=("json", "csv"), default="json",
@@ -34,7 +36,8 @@ def main() -> int:
         sys.stdout.write(discrepancies_csv(result))
     else:
         print(json.dumps(result, ensure_ascii=True, indent=2))
-    return 0
+    return int(args.action == "reconcile" and args.fail_on_discrepancies
+               and any(finding["status"] != "matched" for finding in result["findings"]))
 
 
 if __name__ == "__main__":
