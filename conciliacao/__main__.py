@@ -15,6 +15,7 @@ def main() -> int:
     run = commands.add_parser("reconcile", help="compare two CSV files")
     run.add_argument("ledger", type=Path)
     run.add_argument("settlements", type=Path)
+    run.add_argument("--dry-run", action="store_true", help="print the report without saving it")
     run.add_argument("--fail-on-discrepancies", action="store_true",
                      help="exit with status 1 if the report contains discrepancies")
     report_cmd = commands.add_parser("report", help="read a previously saved result")
@@ -32,7 +33,8 @@ def main() -> int:
             return 0
         if args.action == "reconcile":
             result = reconcile(args.ledger.read_bytes(), args.settlements.read_bytes())
-            save_report(args.db, result)
+            if not args.dry_run:
+                save_report(args.db, result)
         else:
             result = read_report(args.db, args.batch_id)
             if result is None:

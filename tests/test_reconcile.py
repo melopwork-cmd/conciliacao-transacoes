@@ -105,6 +105,17 @@ class ReconciliationTests(unittest.TestCase):
             self.assertEqual(result, {"batch_id": report["batch_id"], "by_status": report["by_status"],
                                       "total_references": 6, "discrepancies": 5})
 
+    def test_dry_run_reports_discrepancies_without_writing_a_database(self):
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "demo.db"
+            result = subprocess.run([
+                sys.executable, "-m", "conciliacao", "--db", str(db), "reconcile",
+                "examples/ledger.csv", "examples/settlements.csv", "--dry-run", "--fail-on-discrepancies",
+            ], cwd=ROOT, capture_output=True)
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertEqual(json.loads(result.stdout), reconcile(LEDGER, SETTLEMENTS))
+            self.assertFalse(db.exists())
+
     def test_cli_round_trip(self):
         with TemporaryDirectory() as tmp:
             db = str(Path(tmp) / "demo.db")
