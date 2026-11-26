@@ -19,8 +19,8 @@ def main() -> int:
                      help="exit with status 1 if the report contains discrepancies")
     report_cmd = commands.add_parser("report", help="read a previously saved result")
     report_cmd.add_argument("batch_id")
-    report_cmd.add_argument("--format", choices=("json", "csv"), default="json",
-                            help="CSV contains only discrepancies")
+    report_cmd.add_argument("--format", choices=("json", "csv", "summary"), default="json",
+                            help="CSV lists discrepancies, summary provides counts only")
     batches_cmd = commands.add_parser("batches", help="list recently saved batches")
     batches_cmd.add_argument("--limit", type=int, default=20)
     args = parser.parse_args()
@@ -42,6 +42,11 @@ def main() -> int:
     if args.action == "report" and args.format == "csv":
         sys.stdout.write(discrepancies_csv(result))
     else:
+        if args.action == "report" and args.format == "summary":
+            by_status = result["by_status"]
+            total = sum(by_status.values())
+            result = {"batch_id": result["batch_id"], "by_status": by_status,
+                      "total_references": total, "discrepancies": total - by_status.get("matched", 0)}
         print(json.dumps(result, ensure_ascii=True, indent=2))
     return int(args.action == "reconcile" and args.fail_on_discrepancies
                and any(finding["status"] != "matched" for finding in result["findings"]))

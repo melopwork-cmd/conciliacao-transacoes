@@ -49,3 +49,5 @@ Use `reconcile --fail-on-discrepancies` para retornar código 1 quando houver di
 ### Histórico de lotes
 
 Execute `python -m conciliacao batches --limit 10` para listar os últimos lotes importados. Use o `batch_id` com o comando `report`.
+
+Use `report BATCH_ID --format summary` para obter apenas o identificador do lote e as contagens de referências e divergências.
