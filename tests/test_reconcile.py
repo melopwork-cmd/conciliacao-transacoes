@@ -105,6 +105,22 @@ class ReconciliationTests(unittest.TestCase):
             self.assertEqual(result, {"batch_id": report["batch_id"], "by_status": report["by_status"],
                                       "total_references": 6, "discrepancies": 5})
 
+    def test_validate_counts_input_rows_and_rejects_a_malformed_file(self):
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "demo.db"
+            bad = Path(tmp) / "bad.csv"
+            bad.write_bytes(b"wrong,headers\n")
+            command = [sys.executable, "-m", "conciliacao", "--db", str(db),
+                       "validate", "examples/ledger.csv"]
+            result = subprocess.check_output([*command, "examples/settlements.csv"], cwd=ROOT)
+            self.assertEqual(json.loads(result), {
+                "ledger_rows": len(read_csv(LEDGER, "ledger")),
+                "settlement_rows": len(read_csv(SETTLEMENTS, "settlements")),
+            })
+            error = subprocess.run([*command, str(bad)], cwd=ROOT, capture_output=True)
+            self.assertEqual(error.returncode, 2, error.stderr)
+            self.assertFalse(db.exists())
+
     def test_dry_run_reports_discrepancies_without_writing_a_database(self):
         with TemporaryDirectory() as tmp:
             db = Path(tmp) / "demo.db"
