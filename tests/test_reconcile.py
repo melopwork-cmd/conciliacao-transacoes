@@ -71,6 +71,15 @@ class ReconciliationTests(unittest.TestCase):
             self.assertEqual(rows["PED-1005"]["registros_liquidacao"], "2")
             self.assertEqual(rows["PED-1005"]["centavos_liquidacao"], "")
 
+    def test_cli_can_fail_on_discrepancies_and_save_the_report(self):
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "demo.db"
+            run = [sys.executable, "-m", "conciliacao", "--db", str(db), "reconcile"]
+            result = subprocess.run([*run, "examples/ledger.csv", "examples/settlements.csv",
+                                     "--fail-on-discrepancies"], cwd=ROOT, capture_output=True)
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertEqual(read_report(db, json.loads(result.stdout)["batch_id"]), json.loads(result.stdout))
+
     def test_cli_round_trip(self):
         with TemporaryDirectory() as tmp:
             db = str(Path(tmp) / "demo.db")
