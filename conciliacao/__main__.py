@@ -15,6 +15,7 @@ def main() -> int:
     run = commands.add_parser("reconcile", help="compare two CSV files")
     run.add_argument("ledger", type=Path)
     run.add_argument("settlements", type=Path)
+    run.add_argument("--format", choices=("json", "csv", "summary"), default="json")
     run.add_argument("--dry-run", action="store_true", help="print the report without saving it")
     run.add_argument("--fail-on-discrepancies", action="store_true",
                      help="exit with status 1 if the report contains discrepancies")
@@ -49,17 +50,18 @@ def main() -> int:
                 parser.error("batch not found")
     except (OSError, ValueError, sqlite3.Error) as error:
         parser.error(str(error))
-    if args.action == "report" and args.format == "csv":
+    exit_status = int(args.action == "reconcile" and args.fail_on_discrepancies
+                      and any(finding["status"] != "matched" for finding in result["findings"]))
+    if args.format == "csv":
         sys.stdout.write(discrepancies_csv(result))
     else:
-        if args.action == "report" and args.format == "summary":
+        if args.format == "summary":
             by_status = result["by_status"]
             total = sum(by_status.values())
             result = {"batch_id": result["batch_id"], "by_status": by_status,
                       "total_references": total, "discrepancies": total - by_status.get("matched", 0)}
         print(json.dumps(result, ensure_ascii=True, indent=2))
-    return int(args.action == "reconcile" and args.fail_on_discrepancies
-               and any(finding["status"] != "matched" for finding in result["findings"]))
+    return exit_status
 
 
 if __name__ == "__main__":
