@@ -80,6 +80,19 @@ class ReconciliationTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1, result.stderr)
             self.assertEqual(read_report(db, json.loads(result.stdout)["batch_id"]), json.loads(result.stdout))
 
+    def test_lists_recent_batches_without_creating_an_empty_database(self):
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "demo.db"
+            cmd = [sys.executable, "-m", "conciliacao", "--db", str(db), "batches"]
+            self.assertEqual(json.loads(subprocess.check_output(cmd, cwd=ROOT)), [])
+            self.assertFalse(db.exists())
+            save_report(db, reconcile(LEDGER, SETTLEMENTS))
+            latest = reconcile(SETTLEMENTS, LEDGER)
+            save_report(db, latest)
+            rows = json.loads(subprocess.check_output([*cmd, "--limit", "1"], cwd=ROOT))
+            self.assertEqual([row["batch_id"] for row in rows], [latest["batch_id"]])
+            self.assertIn("created_at", rows[0])
+
     def test_cli_round_trip(self):
         with TemporaryDirectory() as tmp:
             db = str(Path(tmp) / "demo.db")
