@@ -93,6 +93,19 @@ class ReconciliationTests(unittest.TestCase):
             self.assertEqual([row["batch_id"] for row in rows], [latest["batch_id"]])
             self.assertIn("created_at", rows[0])
 
+    def test_reads_one_reference_from_a_saved_batch(self):
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "demo.db"
+            report = reconcile(LEDGER, SETTLEMENTS)
+            save_report(db, report)
+            command = [sys.executable, "-m", "conciliacao", "--db", str(db), "report", report["batch_id"]]
+            scoped = json.loads(subprocess.check_output([*command, "--reference", "PED-1002"], cwd=ROOT))
+            self.assertEqual([item["reference"] for item in scoped["findings"]], ["PED-1002"])
+            self.assertEqual(scoped["by_status"], {"amount_mismatch": 1})
+            error = subprocess.run([*command, "--reference", "absent"], cwd=ROOT, capture_output=True)
+            self.assertEqual(error.returncode, 2, error.stderr)
+            self.assertEqual(read_report(db, report["batch_id"]), report)
+
     def test_summary_reports_counts_without_transaction_rows(self):
         with TemporaryDirectory() as tmp:
             db = Path(tmp) / "demo.db"
