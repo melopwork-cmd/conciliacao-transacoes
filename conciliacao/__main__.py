@@ -23,6 +23,7 @@ def main() -> int:
     validate.add_argument("settlements", type=Path)
     report_cmd = commands.add_parser("report", help="read a previously saved result")
     report_cmd.add_argument("batch_id")
+    report_cmd.add_argument("--reference", help="include only this exact transaction reference")
     report_cmd.add_argument("--format", choices=("json", "csv", "summary"), default="json",
                             help="CSV lists discrepancies, summary provides counts only")
     batches_cmd = commands.add_parser("batches", help="list recently saved batches")
@@ -47,6 +48,11 @@ def main() -> int:
             result = read_report(args.db, args.batch_id)
             if result is None:
                 parser.error("batch not found")
+            if args.reference is not None:
+                finding = next((item for item in result["findings"] if item["reference"] == args.reference), None)
+                if finding is None:
+                    parser.error("reference not found in batch")
+                result = {**result, "by_status": {finding["status"]: 1}, "findings": [finding]}
     except (OSError, ValueError, sqlite3.Error) as error:
         parser.error(str(error))
     if args.action == "report" and args.format == "csv":

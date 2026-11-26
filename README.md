@@ -50,6 +50,8 @@ Use `reconcile --fail-on-discrepancies` para retornar código 1 quando houver di
 
 Execute `python -m conciliacao batches --limit 10` para listar os últimos lotes importados. Use o `batch_id` com o comando `report`.
 
+Use `report BATCH_ID --reference PED-1002` para consultar uma referência exata.
+
 Use `report BATCH_ID --format summary` para obter apenas o identificador do lote e as contagens de referências e divergências.
 
 Use `reconcile --dry-run` para exibir o relatório sem salvar o lote no banco.
