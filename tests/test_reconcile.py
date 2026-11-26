@@ -121,6 +121,21 @@ class ReconciliationTests(unittest.TestCase):
             self.assertEqual(error.returncode, 2, error.stderr)
             self.assertFalse(db.exists())
 
+    def test_reconcile_csv_or_summary_still_uses_the_discrepancy_exit_code(self):
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "demo.db"
+            command = [sys.executable, "-m", "conciliacao", "--db", str(db), "reconcile",
+                       "examples/ledger.csv", "examples/settlements.csv", "--fail-on-discrepancies"]
+            result = subprocess.run([*command, "--format", "csv"], cwd=ROOT, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertEqual(len(list(csv.DictReader(result.stdout.splitlines(), delimiter=";"))), 5)
+            result = subprocess.run([*command, "--format", "summary"], cwd=ROOT, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1, result.stderr)
+            summary = json.loads(result.stdout)
+            self.assertEqual(summary["discrepancies"], 5)
+            self.assertNotIn("findings", summary)
+            self.assertEqual(read_report(db, summary["batch_id"]), reconcile(LEDGER, SETTLEMENTS))
+
     def test_dry_run_reports_discrepancies_without_writing_a_database(self):
         with TemporaryDirectory() as tmp:
             db = Path(tmp) / "demo.db"
