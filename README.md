@@ -45,3 +45,7 @@ A local Python reconciliation CLI with exact currency amounts, row-level discrep
 ### Verificação em automações
 
 Use `reconcile --fail-on-discrepancies` para retornar código 1 quando houver divergências. O relatório continua disponível no SQLite e na saída padrão.
+
+### Histórico de lotes
+
+Execute `python -m conciliacao batches --limit 10` para listar os últimos lotes importados. Use o `batch_id` com o comando `report`.

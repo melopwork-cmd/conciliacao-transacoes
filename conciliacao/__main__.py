@@ -5,7 +5,7 @@ import sqlite3
 import sys
 
 from .core import discrepancies_csv, reconcile
-from .store import read_report, save_report
+from .store import list_batches, read_report, save_report
 
 
 def main() -> int:
@@ -21,8 +21,15 @@ def main() -> int:
     report_cmd.add_argument("batch_id")
     report_cmd.add_argument("--format", choices=("json", "csv"), default="json",
                             help="CSV contains only discrepancies")
+    batches_cmd = commands.add_parser("batches", help="list recently saved batches")
+    batches_cmd.add_argument("--limit", type=int, default=20)
     args = parser.parse_args()
+    if args.action == "batches" and not 1 <= args.limit <= 100:
+        parser.error("--limit must be between 1 and 100")
     try:
+        if args.action == "batches":
+            print(json.dumps(list_batches(args.db, args.limit), indent=2))
+            return 0
         if args.action == "reconcile":
             result = reconcile(args.ledger.read_bytes(), args.settlements.read_bytes())
             save_report(args.db, result)
