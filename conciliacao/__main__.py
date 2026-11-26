@@ -2,8 +2,9 @@ from argparse import ArgumentParser
 import json
 from pathlib import Path
 import sqlite3
+import sys
 
-from .core import reconcile
+from .core import discrepancies_csv, reconcile
 from .store import read_report, save_report
 
 
@@ -16,6 +17,8 @@ def main() -> int:
     run.add_argument("settlements", type=Path)
     report_cmd = commands.add_parser("report", help="read a previously saved result")
     report_cmd.add_argument("batch_id")
+    report_cmd.add_argument("--format", choices=("json", "csv"), default="json",
+                            help="CSV contains only discrepancies")
     args = parser.parse_args()
     try:
         if args.action == "reconcile":
@@ -27,7 +30,10 @@ def main() -> int:
                 parser.error("batch not found")
     except (OSError, ValueError, sqlite3.Error) as error:
         parser.error(str(error))
-    print(json.dumps(result, ensure_ascii=True, indent=2))
+    if args.action == "report" and args.format == "csv":
+        sys.stdout.write(discrepancies_csv(result))
+    else:
+        print(json.dumps(result, ensure_ascii=True, indent=2))
     return 0
 
 

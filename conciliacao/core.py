@@ -83,6 +83,29 @@ def compare(ledger: list[Transaction], settlements: list[Transaction]) -> list[d
     return findings
 
 
+def discrepancies_csv(report: dict) -> str:
+    output = io.StringIO(newline="")
+    writer = csv.writer(output, delimiter=";", lineterminator="\n")
+    writer.writerow([
+        "referencia", "status", "registros_ledger", "registros_liquidacao",
+        "centavos_ledger", "centavos_liquidacao", "moeda_ledger", "moeda_liquidacao",
+    ])
+    for finding in report["findings"]:
+        if finding["status"] == "matched":
+            continue
+        reference = finding["reference"]
+        if reference.startswith(("-", "+", "=", "@")):
+            reference = "'" + reference
+        ledger, settlements = finding["ledger"], finding["settlements"]
+        left = ledger[0] if len(ledger) == 1 else {}
+        right = settlements[0] if len(settlements) == 1 else {}
+        writer.writerow([
+            reference, finding["status"], len(ledger), len(settlements),
+            left.get("cents"), right.get("cents"), left.get("currency"), right.get("currency"),
+        ])
+    return output.getvalue()
+
+
 def reconcile(ledger: bytes, settlements: bytes) -> dict:
     findings = compare(read_csv(ledger, "ledger"), read_csv(settlements, "settlements"))
     return {
