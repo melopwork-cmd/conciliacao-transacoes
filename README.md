@@ -53,3 +53,5 @@ Execute `python -m conciliacao batches --limit 10` para listar os últimos lotes
 Use `report BATCH_ID --format summary` para obter apenas o identificador do lote e as contagens de referências e divergências.
 
 Use `reconcile --dry-run` para exibir o relatório sem salvar o lote no banco.
+
+Use `python -m conciliacao validate ledger.csv settlements.csv` para validar e contar os registros de entrada sem abrir o banco.

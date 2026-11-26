@@ -4,7 +4,7 @@ from pathlib import Path
 import sqlite3
 import sys
 
-from .core import discrepancies_csv, reconcile
+from .core import discrepancies_csv, read_csv, reconcile
 from .store import list_batches, read_report, save_report
 
 
@@ -18,6 +18,9 @@ def main() -> int:
     run.add_argument("--dry-run", action="store_true", help="print the report without saving it")
     run.add_argument("--fail-on-discrepancies", action="store_true",
                      help="exit with status 1 if the report contains discrepancies")
+    validate = commands.add_parser("validate", help="validate the two input CSV files")
+    validate.add_argument("ledger", type=Path)
+    validate.add_argument("settlements", type=Path)
     report_cmd = commands.add_parser("report", help="read a previously saved result")
     report_cmd.add_argument("batch_id")
     report_cmd.add_argument("--format", choices=("json", "csv", "summary"), default="json",
@@ -28,6 +31,11 @@ def main() -> int:
     if args.action == "batches" and not 1 <= args.limit <= 100:
         parser.error("--limit must be between 1 and 100")
     try:
+        if args.action == "validate":
+            ledger = read_csv(args.ledger.read_bytes(), "ledger")
+            settlements = read_csv(args.settlements.read_bytes(), "settlements")
+            print(json.dumps({"ledger_rows": len(ledger), "settlement_rows": len(settlements)}, indent=2))
+            return 0
         if args.action == "batches":
             print(json.dumps(list_batches(args.db, args.limit), indent=2))
             return 0
