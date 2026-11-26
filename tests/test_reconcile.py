@@ -93,6 +93,18 @@ class ReconciliationTests(unittest.TestCase):
             self.assertEqual([row["batch_id"] for row in rows], [latest["batch_id"]])
             self.assertIn("created_at", rows[0])
 
+    def test_summary_reports_counts_without_transaction_rows(self):
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "demo.db"
+            report = reconcile(LEDGER, SETTLEMENTS)
+            save_report(db, report)
+            result = json.loads(subprocess.check_output([
+                sys.executable, "-m", "conciliacao", "--db", str(db),
+                "report", report["batch_id"], "--format", "summary",
+            ], cwd=ROOT))
+            self.assertEqual(result, {"batch_id": report["batch_id"], "by_status": report["by_status"],
+                                      "total_references": 6, "discrepancies": 5})
+
     def test_cli_round_trip(self):
         with TemporaryDirectory() as tmp:
             db = str(Path(tmp) / "demo.db")
