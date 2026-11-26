@@ -92,6 +92,10 @@ class ReconciliationTests(unittest.TestCase):
             rows = json.loads(subprocess.check_output([*cmd, "--limit", "1"], cwd=ROOT))
             self.assertEqual([row["batch_id"] for row in rows], [latest["batch_id"]])
             self.assertIn("created_at", rows[0])
+            older = json.loads(subprocess.check_output([*cmd, "--limit", "1", "--offset", "1"], cwd=ROOT))
+            self.assertEqual([row["batch_id"] for row in older], [reconcile(LEDGER, SETTLEMENTS)["batch_id"]])
+            error = subprocess.run([*cmd, "--offset", "-1"], cwd=ROOT, capture_output=True)
+            self.assertEqual(error.returncode, 2, error.stderr)
 
     def test_summary_reports_counts_without_transaction_rows(self):
         with TemporaryDirectory() as tmp:
